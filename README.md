@@ -81,7 +81,7 @@ La víctima tiene un dominio **privado** (`banco-secreto.example`, id 1) con una
 ## Endpoints
 | Método | Ruta | Auth | Nota |
 |--------|------|------|------|
-| GET | `/api/v1/docs` | **no** | Swagger UI expuesto a propósito (A02) — recon del paso 1 |
+| GET | `/api/v1/docs` | **no** | Swagger UI expuesto a propósito — recon del Paso 1 (A07) |
 | GET | `/api/v1/openapi.json` | no | el spec OpenAPI crudo |
 | POST | `/api/v1/auth/register` | no | 409 si el email existe, 201 si es nuevo |
 | POST | `/api/v1/auth/login` | no | |
@@ -95,77 +95,57 @@ La víctima tiene un dominio **privado** (`banco-secreto.example`, id 1) con una
 | GET | `/api/v1/leaderboard` | no | dominios públicos + sus auditorías |
 
 ## Cadena de vulnerabilidades (Cadena 3)
-**Suplantación de identidad y publicación de datos privados de terceros** (modelo *botín → llave*):
-a partir de una documentación de API que no debía estar expuesta, se forja la identidad de la víctima
-y se publica su auditoría privada en el leaderboard público, sin conocer ninguna credencial suya.
+**Suplantación de identidad y publicación de datos privados de terceros** (modelo *botín → llave*, cada
+salida es la entrada del paso siguiente): a partir de una cuenta propia se forja la identidad de la
+víctima y se publica su auditoría privada en el leaderboard público, sin conocer ninguna credencial suya.
 
 **Herramientas:** Burp Suite (interceptar y repetir peticiones, manipular el JWT) y Hashcat (ataque
-offline sobre el secreto del JWT).
+offline sobre el secreto del JWT, con `wordlists/rockyou_mini.txt` para la demo o `wordlists/rockyou.txt`
+para el ataque completo).
 
-```
-[A02] Security Misconfiguration (Swagger expuesto en /api/v1/docs, sin auth)
-   │  → mapa completo de la API: endpoints, el 409/201 del register, id secuencial
-[A07] Enumeración de usuarios   (registro 409 vs 201, id_usuario secuencial)
-   │  → email confirmado + id de la víctima
-[A07] Authentication Failures   (login sin rate-limit, password débil)
-   │  → un JWT válido firmado por el server
-[A04] Cryptographic Failures    (crackeo offline del secreto, JWT_SECRET=clave123)
-   │  → el JWT_SECRET
-[A01] Broken Access Control     (token forjado con sub = id de la víctima)
-   │  → sesión de la víctima: lee y exporta sus auditorías privadas
-[A06] Insecure Design           (auditoría asociada a un dominio ajeno + publicar el dominio)
-   🏁  el leaderboard público expone la auditoría privada de la víctima
-```
-
-**Paso 1 — A02 Security Misconfiguration + A07 Enumeración de usuarios.** El recon arranca desde el
-propio frontend: en DevTools → Network se ve que las llamadas salen a `/api/v1/...`. Fuzzeando rutas
-convencionales aparece **Swagger UI público y sin auth** en `/api/v1/docs` (`src/openapi.js`), que lista
-todos los endpoints. El register (`POST /api/v1/auth/register`) responde **409** si el email ya existe
-y **201** si es nuevo: desde Burp Repeater se confirma qué emails son cuentas reales. Como el
-`id_usuario` es un autoincrement secuencial, la víctima (la cuenta más antigua) tiene un id bajo y
-acotable.
+### Paso 1 — A07:2025 Authentication Failures
+Con `POST /api/v1/auth/register` se enumeran cuentas: responde **409** si el email ya existe y **201** si
+es nuevo, confirmando desde Burp Repeater qué emails son reales. La superficie de la API se lee del
+**Swagger expuesto sin auth** en `/api/v1/docs` (`src/openapi.js`). Registrando cuentas propias se ve que
+el `id_usuario` es un autoincrement **secuencial** (la víctima, la cuenta más antigua, tiene un id bajo y
+acotable) y que el **JWT viene en la respuesta** (`firmarToken` en `src/server.js`). Así se obtiene, sin
+tocar credenciales de la víctima, un token válido propio.
 - *Entrada:* acceso HTTP a la app + un email candidato de la víctima.
-- *Salida:* la API documentada + el `409` que confirma a la víctima + un rango acotado de IDs.
-- *Para el paso siguiente:* el `id` de la víctima (el `sub` a forjar en el paso 4).
+- *Salida:* el `409` que confirma a la víctima + evidencia de IDs secuenciales + un JWT propio válido.
+- *Dato para el paso siguiente:* el JWT (muestra para el crackeo) y el `idVictima` (el `sub` a forjar).
 
-**Paso 2 — A07 Authentication Failures (sin rate-limit).** El login (`POST /api/v1/auth/login`) no
-aplica rate-limiting ni bloqueo por intentos, y la política de contraseñas es débil (acepta
-`password1`): se puede automatizar fuerza bruta con Burp Intruder. Como el registro es abierto, el mismo
-JWT válido se obtiene registrándose; la fuerza bruta igual **acredita la ausencia de rate-limiting**.
-- *Entrada:* un email válido + una lista de contraseñas.
-- *Salida:* un `200` con un JWT válido firmado por el servidor.
-- *Para el paso siguiente:* ese JWT, material para el crackeo offline.
-
-**Paso 3 — A04 Cryptographic Failures (secreto débil).** El JWT está firmado con HS256 usando
-`JWT_SECRET` (`clave123` en el laboratorio). Se ataca **offline** con Hashcat (modo `16500` = JWT), sin
-contacto con el servidor, así que un rate-limit sería irrelevante.
+### Paso 2 — A04:2025 Cryptographic Failures
+El JWT está firmado con HS256 usando un `JWT_SECRET` débil (`clave123` en el laboratorio). Se ataca
+**offline** con Hashcat (modo `16500` = JWT), sin contacto con el servidor, así que un rate-limit sería
+irrelevante.
 ```bash
-echo "<token-del-paso-2>" > token.txt
-hashcat -a 0 -m 16500 token.txt diccionario.txt
+echo "<jwt-del-paso-1>" > token.txt
+hashcat -a 0 -m 16500 token.txt wordlists/rockyou_mini.txt   # demo; ataque real: wordlists/rockyou.txt
 hashcat -m 16500 token.txt --show        # => ...:clave123
 ```
-- *Entrada:* el JWT del paso 2.
-- *Salida:* el `JWT_SECRET` en claro.
-- *Para el paso siguiente:* la llave maestra para firmar tokens arbitrarios.
+- *Entrada:* un JWT válido firmado por el servidor (el de la cuenta propia).
+- *Salida:* el `JWT_SECRET` en claro (secreto débil recuperado en segundos).
+- *Dato para el paso siguiente:* el secreto, la llave maestra para firmar tokens arbitrarios.
 
-**Paso 4 — A01 Broken Access Control (token forjado).** La autorización confía únicamente en el claim
-`sub`, sin sesión del lado del servidor ni tokens revocables. Con el secreto se firma un token cuyo
-`sub` sea el id de la víctima y se inyecta en el navegador.
+### Paso 3 — A01:2025 Broken Access Control
+La autorización confía únicamente en el claim `sub`, sin sesión del lado del servidor ni tokens
+revocables. Con el secreto se firma un token cuyo `sub` sea el `idVictima` y se inyecta en el navegador.
 ```bash
-# forjar el token de la víctima (sub = id del paso 1)
+# forjar el token de la víctima (sub = idVictima del paso 1)
 node -e "console.log(require('jsonwebtoken').sign({sub:1},'clave123',{expiresIn:'1d'}))"
 ```
 Inyectarlo en la web (F12 → Application → Local Storage → `a11yrank_token`) y recargar. Con ese token,
 `GET /api/v1/audits` devuelve las auditorías privadas de la víctima y `…/export?format=csv` las exporta.
-- *Entrada:* `JWT_SECRET` + id de la víctima.
+- *Entrada:* `JWT_SECRET` + `idVictima`.
 - *Salida:* sesión válida con la identidad de la víctima; lectura y exportación de sus datos privados.
-- *Para el paso siguiente:* el `id_dominio` de su dominio privado.
+- *Dato para el paso siguiente:* el `id_dominio` de su dominio privado.
 
-**Paso 5 — A06 Insecure Design (publicación de datos privados).** Al crear una auditoría se puede pasar
-cualquier `dominio_id` (`POST /api/v1/audits`, `{ url, dominio_id }`), sin verificar que el dominio sea
-propio (`src/server.js`). Operando como la víctima, se asocia una auditoría a su dominio privado y, como
-la visibilidad se decide a nivel de dominio, `PATCH /api/v1/domains/:id/visibility` publica ese dominio
-→ el leaderboard público (`GET /api/v1/leaderboard`) expone también sus auditorías privadas.
+### Paso 4 — A06:2025 Insecure Design
+Al crear una auditoría se puede pasar cualquier `dominio_id` (`POST /api/v1/audits`, `{ url, dominio_id }`),
+sin verificar que el dominio sea propio (`src/server.js`). Operando como la víctima, se asocia una
+auditoría a su dominio privado y, como la visibilidad se decide a nivel de dominio,
+`PATCH /api/v1/domains/:id/visibility` publica ese dominio → el leaderboard público
+(`GET /api/v1/leaderboard`) expone también sus auditorías privadas.
 - *Entrada:* sesión de la víctima + `id_dominio` privado.
 - *Salida:* la auditoría privada de la víctima queda expuesta en el ranking público.
 - *Impacto final:* robo de cuenta sin credenciales + exposición pública de datos privados de terceros.
