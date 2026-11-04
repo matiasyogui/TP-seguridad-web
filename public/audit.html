@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auditoría · A11yRank Mini</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="audit">
+  <div class="app-layout">
+    <div id="app-header"></div>
+    <main id="main-content" class="app-main page-enter" tabindex="-1">
+      <a href="index.html" class="back-link">← Volver a mis auditorías</a>
+      <div id="anuncio" class="sr-only" role="status" aria-live="polite"></div>
+      <div id="detalle"><div class="flex justify-center py-8"><span class="spinner spinner-lg"></span></div></div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

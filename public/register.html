@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear cuenta · A11yRank Mini</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="register">
+  <div class="auth-bg" role="main">
+    <div class="auth-card">
+      <a href="leaderboard.html" class="auth-logo" aria-label="A11yRank — ver leaderboard público">
+        <img src="a11yrank-logo.png" alt="A11yRank" style="height:90px;width:auto;display:block" />
+      </a>
+      <h1 style="font-size:1.375rem;text-align:center;margin-bottom:.375rem">Crear cuenta gratuita</h1>
+      <p style="text-align:center;margin-bottom:1.75rem;font-size:.9rem">Empezá a auditar la accesibilidad de tus sitios hoy</p>
+      <div id="err"></div>
+      <form id="form" novalidate>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 .75rem">
+          <div class="input-group"><label class="input-label" for="nombre">Nombre</label><input class="input-field" id="nombre" name="nombre" required placeholder="Tu nombre"></div>
+          <div class="input-group"><label class="input-label" for="apellido">Apellido</label><input class="input-field" id="apellido" name="apellido" required placeholder="Tu apellido"></div>
+        </div>
+        <div class="input-group"><label class="input-label" for="email">Email</label><input class="input-field" id="email" name="email" type="email" required placeholder="tu@email.com"></div>
+        <div class="input-group" style="margin-bottom:0"><label class="input-label" for="password">Contraseña</label><input class="input-field" id="password" name="password" type="password" required placeholder="Mínimo 8 caracteres"></div>
+        <ul class="password-reqs" id="reqs" aria-label="Requisitos de la contraseña"></ul>
+        <button class="btn btn-primary" type="submit" style="width:100%;padding:.75rem">Registrarme gratis</button>
+      </form>
+      <p style="text-align:center;margin-top:1.5rem;font-size:.875rem;margin-bottom:0">¿Ya tenés cuenta? <a href="login.html" style="color:var(--color-orange);font-weight:700">Iniciá sesión</a></p>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

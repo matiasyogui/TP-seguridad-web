@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar sesión · A11yRank Mini</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="login">
+  <div class="auth-bg" role="main">
+    <div class="auth-card">
+      <a href="leaderboard.html" class="auth-logo" aria-label="A11yRank — ver leaderboard público">
+        <img src="a11yrank-logo.png" alt="A11yRank" style="height:90px;width:auto;display:block" />
+      </a>
+      <h1 style="font-size:1.375rem;text-align:center;margin-bottom:.375rem">Bienvenido de nuevo</h1>
+      <p style="text-align:center;margin-bottom:1.75rem;font-size:.9rem">Ingresá para ver el estado de accesibilidad de tus sitios</p>
+      <div id="err"></div>
+      <form id="form" novalidate>
+        <div class="input-group"><label class="input-label" for="email">Email</label><input class="input-field" id="email" name="email" type="email" required value="atacante@frba.utn.edu.ar"></div>
+        <div class="input-group"><label class="input-label" for="password">Contraseña</label><input class="input-field" id="password" name="password" type="password" required value="Atacante123"></div>
+        <button class="btn btn-primary" type="submit" style="width:100%;padding:.75rem">Ingresar</button>
+      </form>
+      <p style="text-align:center;margin-top:1.5rem;font-size:.875rem;margin-bottom:0">¿No tenés cuenta? <a href="register.html" style="color:var(--color-orange);font-weight:700">Registrate gratis</a></p>
+      <p style="text-align:center;margin-top:.5rem;font-size:.875rem"><a href="leaderboard.html">🏆 Ver leaderboard público</a></p>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

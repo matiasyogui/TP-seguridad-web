@@ -1,0 +1,26 @@
+{
+  "name": "a11yrank-mini",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Version minima y VULNERABLE A PROPOSITO de A11yRank para el TP de Seguridad (UTN FRBA, Grupo 5). Solo laboratorio.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js",
+    "analyzer:selfcheck": "node src/analyzer.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "sequelize": "^6.37.5",
+    "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
