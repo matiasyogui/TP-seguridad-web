@@ -139,6 +139,27 @@ app.get('/api/v1/audits/:id/export', requireAuth, wrap(async (req, res) => {
   res.type('text/csv').attachment(`auditoria-${auditoria.id_auditoria}.csv`).send(csv);
 }));
 
+app.patch('/api/v1/audits/:id', requireAuth, wrap(async (req, res) => {
+  const auditoria = await Auditoria.findByPk(req.params.id);
+  if (!auditoria || auditoria.usuario_id !== req.userId) throw fail(404, 'No encontrada');
+  const {
+    url,
+    score,
+    estado,
+    etapa,
+    usuario_id,
+    dominio_id
+  } = req.body;
+  if (url !== undefined) auditoria.url = url;
+  if (score !== undefined) auditoria.score = score;
+  if (estado !== undefined) auditoria.estado = estado;
+  if (etapa !== undefined) auditoria.etapa = etapa;
+  if (usuario_id !== undefined) auditoria.usuario_id = usuario_id;
+  if (dominio_id !== undefined) auditoria.dominio_id = dominio_id;
+  await auditoria.save();
+  res.json(auditoria);
+}));
+
 // --- Dominios ------------------------------------------------------------
 app.post('/api/v1/domains', requireAuth, wrap(async (req, res) => {
   const { host } = req.body || {};

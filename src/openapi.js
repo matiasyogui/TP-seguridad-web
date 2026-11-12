@@ -96,7 +96,68 @@ module.exports = {
         responses: { 201: { description: 'Auditoria creada, en proceso' }, 400: { description: 'URL invalida' }, 401: { description: 'No autorizado' } },
       },
     },
-    '/audits/{id}': { get: { tags: ['audits'], summary: 'Detalle de auditoria', security: Bearer, parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { 200: { description: 'Auditoria con hallazgos' }, 404: { description: 'No encontrada (o no es del sub del token)' } } } },
+    '/audits/{id}': { 
+      get: { tags: ['audits'], summary: 'Detalle de auditoria', security: Bearer, parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { 200: { description: 'Auditoria con hallazgos' }, 404: { description: 'No encontrada (o no es del sub del token)' } } },
+      patch: {
+  tags: ['audits'],
+  summary: 'Modificar auditoría',
+  description: 'Modifica los datos de una auditoría existente.',
+  security: Bearer,
+  parameters: [
+    {
+      name: 'id',
+      in: 'path',
+      required: true,
+      description: 'Identificador de la auditoría.',
+      schema: { type: 'integer' }
+    }
+  ],
+  requestBody: {
+    required: true,
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              example: 'https://example.com'
+            },
+            score: {
+              type: 'integer',
+              nullable: true,
+              example: 85
+            },
+            estado: {
+              type: 'string',
+              enum: ['EN_PROCESO', 'COMPLETADO', 'FALLIDO'],
+              example: 'COMPLETADO'
+            },
+            etapa: {
+              type: 'string',
+              nullable: true,
+              example: 'puntaje'
+            },
+            dominio_id: {
+              type: 'integer',
+              nullable: true,
+              example: 3
+            }
+          }
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: 'Auditoría actualizada correctamente.'
+    },
+    404: {
+      description: 'Auditoría no encontrada.'
+    }
+  }
+}
+    },
     '/audits/{id}/export': { get: { tags: ['audits'], summary: 'Exportar auditoria a CSV', security: Bearer, parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }, { name: 'format', in: 'query', schema: { type: 'string', example: 'csv' } }], responses: { 200: { description: 'CSV', content: { 'text/csv': {} } }, 404: { description: 'No encontrada' } } } },
     '/domains': {
       get: { tags: ['domains'], summary: 'Mis dominios', security: Bearer, responses: { 200: { description: 'Lista de dominios del sub del token' } } },
